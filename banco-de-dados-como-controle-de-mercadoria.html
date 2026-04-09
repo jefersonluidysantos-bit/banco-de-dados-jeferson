@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📦 Controle de Estoque</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e40af);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            overflow: hidden;
+            color: #1e2937;
+        }
+        header {
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 25px 35px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        header h1 { font-size: 32px; font-weight: 700; }
+
+        .main { padding: 35px; }
+
+        .form-container {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 140px;
+            gap: 18px;
+        }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        input:focus { outline: none; border-color: #3b82f6; }
+
+        /* Campo de Busca */
+        .search-container {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .search-container input {
+            padding-left: 50px;
+            font-size: 17px;
+        }
+        .search-container::before {
+            content: "🔍";
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #64748b;
+        }
+
+        button {
+            padding: 14px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        button:hover { background: #1e40af; transform: translateY(-2px); }
+
+        h2 { color: #1e40af; margin-bottom: 18px; font-size: 26px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+        th {
+            background: #1e40af;
+            color: white;
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 16px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:hover { background: #f1f5f9; }
+        .low-stock { background: #fef3c7; color: #b45309; font-weight: 600; }
+
+        .actions button {
+            margin-right: 6px;
+            padding: 7px 12px;
+            font-size: 14px;
+        }
+        .btn-delete { background: #ef4444; }
+        .btn-delete:hover { background: #b91c1c; }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .footer {
+            padding: 20px 35px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span style="font-size: 38px;">📦</span>
+            <div>
+                <h1>Controle de Estoque</h1>
+                <p>Gerencie seus produtos com busca em tempo real</p>
+            </div>
+        </header>
+
+        <div class="main">
+            <!-- Formulário de Cadastro -->
+            <div class="form-container">
+                <h2>➕ Adicionar / Atualizar Produto</h2>
+                <form id="formEstoque">
+                    <div class="form-grid">
+                        <div>
+                            <label>Produto</label>
+                            <input type="text" id="produto" placeholder="Ex: Mouse Wireless Logitech" required>
+                        </div>
+                        <div>
+                            <label>Preço Unitário (R$)</label>
+                            <input type="number" id="preco" step="0.01" placeholder="89.90" required>
+                        </div>
+                        <div>
+                            <label>Quantidade</label>
+                            <input type="number" id="quantidade" min="0" value="1" required>
+                        </div>
+                        <div>
+                            <label>Categoria</label>
+                            <input type="text" id="categoria" placeholder="Informática, Eletrônicos..." required>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button type="submit" style="width: 100%; height: 52px;">
+                                💾 Salvar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Campo de Busca -->
+            <div class="search-container">
+                <input type="text" id="campoBusca" placeholder="Buscar por nome do produto ou categoria..." 
+                       onkeyup="filtrarProdutos()">
+            </div>
+
+            <h2>📋 Estoque Atual</h2>
+            <div style="margin-bottom: 15px; text-align: right;">
+                <button onclick="limparEstoque()" style="background:#ef4444; padding: 10px 18px;">
+                    🗑️ Limpar Estoque
+                </button>
+                <button onclick="carregarEstoque()" style="margin-left: 10px; background:#10b981;">
+                    🔄 Atualizar
+                </button>
+            </div>
+
+            <table id="tabelaEstoque">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Preço Unitário</th>
+                        <th>Quantidade</th>
+                        <th>Valor Total</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+
+            <div id="mensagemVazia" class="empty" style="display: none;">
+                <h3>Nenhum produto encontrado</h3>
+                <p>Tente mudar os termos da busca ou adicione novos produtos.</p>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right;" id="totalGeral"></div>
+        </div>
+
+        <div class="footer">
+            <div>
+                ✅ Dados salvos no navegador (IndexedDB) • Funciona offline
+            </div>
+            <small>Controle de Estoque com Busca em Tempo Real</small>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        let todosProdutos = [];   // Guardamos todos os produtos aqui para filtrar rápido
+
+        const DB_NAME = "ControleEstoqueDB";
+        const DB_VERSION = 1;
+        const STORE_NAME = "produtos";
+
+        function abrirBanco() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+                        store.createIndex("produto", "produto", { unique: false });
+                        store.createIndex("categoria", "categoria", { unique: false });
+                    }
+                };
+
+                request.onsuccess = (e) => { db = e.target.result; resolve(); };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function salvarProduto(produto, preco, quantidade, categoria) {
+            const transaction = db.transaction(STORE_NAME, "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+
+            const item = {
+                produto: produto.trim(),
+                preco: parseFloat(preco),
+                quantidade: parseInt(quantidade),
+                categoria: categoria.trim(),
+                data: new Date().toISOString()
+            };
+
+            return new Promise((resolve, reject) => {
+                store.put(item).onsuccess = () => resolve();
+                store.put(item).onerror = (e) => reject(e);
+            });
+        }
+
+        async function carregarEstoque() {
+            const transaction = db.transaction(STORE_NAME, "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                todosProdutos = request.result;
+                filtrarProdutos();   // Mostra todos inicialmente
+            };
+        }
+
+        // ==================== FUNÇÃO DE BUSCA ====================
+        function filtrarProdutos() {
+            const termo = document.getElementById("campoBusca").value.toLowerCase().trim();
+            const tbody = document.getElementById("tbody");
+            const mensagemVazia = document.getElementById("mensagemVazia");
+            let totalGeral = 0;
+
+            tbody.innerHTML = "";
+
+            const filtrados = todosProdutos.filter(p => 
+                p.produto.toLowerCase().includes(termo) || 
+                p.categoria.toLowerCase().includes(termo)
+            );
+
+            if (filtrados.length === 0) {
+                mensagemVazia.style.display = "block";
+                document.getElementById("totalGeral").innerHTML = "";
+                return;
+            }
+
+            mensagemVazia.style.display = "none";
+
+            // Ordena do mais recente para o mais antigo
+            filtrados.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            filtrados.forEach(p => {
+                const valorTotal = p.preco * p.quantidade;
+                totalGeral += valorTotal;
+
+                const dataFormatada = new Date(p.data).toLocaleString('pt-BR');
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><strong>#${p.id}</strong></td>
+                    <td><strong>${p.produto}</strong></td>
+                    <td>${p.categoria}</td>
+                    <td>R$ ${p.preco.toFixed(2)}</td>
+                    <td class="${p.quantidade < 5 ? 'low-stock' : ''}">${p.quantidade} un</td>
+                    <td><strong>R$ ${valorTotal.toFixed(2)}</strong></td>
+                    <td>${dataFormatada}</td>
+                    <td class="actions">
+                        <button onclick="editarProduto(${p.id})" style="background:#eab308;">✏️</button>
+                        <button onclick="excluirProduto(${p.id})" class="btn-delete">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById("totalGeral").innerHTML = `
+                <strong class="total">Valor Total em Estoque: R$ ${totalGeral.toFixed(2)}</strong>
+            `;
+        }
+
+        async function excluirProduto(id) {
+            if (!confirm("Deseja excluir este produto?")) return;
+            const transaction = db.transaction(STORE_NAME, "readwrite");
+            transaction.objectStore(STORE_NAME).delete(id);
+            transaction.oncomplete = () => {
+                alert("Produto excluído!");
+                carregarEstoque();
+            };
+        }
+
+        async function editarProduto(id) {
+            const transaction = db.transaction(STORE_NAME, "readonly");
+            const request = transaction.objectStore(STORE_NAME).get(id);
+
+            request.onsuccess = () => {
+                const p = request.result;
+                if (!p) return;
+
+                const novoProduto = prompt("Nome do produto:", p.produto);
+                if (novoProduto === null) return;
+                const novoPreco = prompt("Preço unitário:", p.preco);
+                if (novoPreco === null) return;
+                const novaQtd = prompt("Quantidade:", p.quantidade);
+                if (novaQtd === null) return;
+                const novaCategoria = prompt("Categoria:", p.categoria);
+                if (novaCategoria === null) return;
+
+                p.produto = novoProduto.trim();
+                p.preco = parseFloat(novoPreco);
+                p.quantidade = parseInt(novaQtd);
+                p.categoria = novaCategoria.trim();
+
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).put(p);
+                tx.oncomplete = () => {
+                    alert("Produto atualizado!");
+                    carregarEstoque();
+                };
+            };
+        }
+
+        async function limparEstoque() {
+            if (!confirm("⚠️ APAGAR TODO O ESTOQUE?\nEsta ação não pode ser desfeita.")) return;
+            db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).clear();
+            alert("Estoque limpo!");
+            carregarEstoque();
+        }
+
+        // Inicialização
+        async function iniciar() {
+            await abrirBanco();
+            carregarEstoque();
+
+            const form = document.getElementById("formEstoque");
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const produto = document.getElementById("produto").value;
+                const preco = document.getElementById("preco").value;
+                const quantidade = document.getElementById("quantidade").value;
+                const categoria = document.getElementById("categoria").value;
+
+                await salvarProduto(produto, preco, quantidade, categoria);
+                alert("✅ Produto salvo com sucesso!");
+                form.reset();
+                document.getElementById("quantidade").value = 1;
+                carregarEstoque();
+            });
+        }
+
+        window.onload = iniciar;
+    </script>
+</body>
+</html>
